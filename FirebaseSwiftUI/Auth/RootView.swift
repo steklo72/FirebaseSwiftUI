@@ -7,12 +7,31 @@
 
 import SwiftUI
 
-struct rootView: View {
+struct RootView: View {
+    @State private var showSignInView: Bool = false
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        ZStack{
+            if !showSignInView {
+                NavigationStack{
+                    SettingView(showSignInView: $showSignInView)
+                }
+            }
+            
+        }
+        .onAppear {
+            let autUser = try? AuthenticationManager.shared.getAuthenticatedUser()
+            self.showSignInView = autUser == nil
+            
+        }
+        .fullScreenCover(isPresented: $showSignInView) {
+            NavigationStack{
+                AuthenticationView(showSignInView: $showSignInView)
+            }
+        }
+
     }
 }
 
 #Preview {
-    rootView()
+    RootView()
 }

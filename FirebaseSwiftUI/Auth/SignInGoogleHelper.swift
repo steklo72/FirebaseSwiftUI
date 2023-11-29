@@ -5,14 +5,37 @@
 //  Created by Fedotov Aleksandr on 25.11.2023.
 //
 
-import SwiftUI
+import Foundation
+import GoogleSignIn
+import GoogleSignInSwift
 
-struct SignInGoogleHelper: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
+struct GoogleSignInResult {
+    let idToken: String
+    let accessToken: String
+
+    
 }
-
-#Preview {
-    SignInGoogleHelper()
+final class SignInGoogleHelper {
+    @MainActor
+    func signIn() async throws -> GoogleSignInResultModel {
+        
+        guard let topVC = Utilities.shared.topViewController() else {
+            throw URLError(.cannotFindHost)
+        }
+        
+        
+        
+        let gidSignInResult = try await GIDSignIn.sharedInstance.signIn(withPresenting: topVC)
+        
+        guard let idToken = gidSignInResult.user.idToken?.tokenString else {
+            throw URLError(.badServerResponse)
+        }
+        let accessToken = gidSignInResult.user.accessToken.tokenString
+        let name = gidSignInResult.user.profile?.name
+        let email = gidSignInResult.user.profile?.email
+        
+        
+        let tokens = GoogleSignInResultModel(idToken: idToken, accessToken: accessToken)
+        return tokens
+    }
 }
