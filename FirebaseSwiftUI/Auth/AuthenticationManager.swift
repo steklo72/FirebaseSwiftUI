@@ -56,6 +56,12 @@ final class AuthenticationManager {
     func signOut() throws {
         try Auth.auth().signOut()
     }
+    func delete() async throws {
+        guard let user = Auth.auth().currentUser else {
+            throw URLError(.badURL)
+        }
+        try await user.delete()
+    }
 }
 //MARK: SIGN IN EMAIL
 extension AuthenticationManager {
@@ -139,15 +145,6 @@ extension AuthenticationManager {
         return try await linkCredential(credential: credential)
 
     }
-    
-//    func linkGoogle(tokens: GoogleSignInResultModel) async throws -> AuthDataResultModel {
-//        let credential = GoogleAuthProvider.credential(withIDToken: tokens.idToken, accessToken: tokens.accessToken)
-//        guard let user = Auth.auth().currentUser else {
-//            throw URLError(.badURL)
-//        }
-//       let authDataResult = try await user.link(with: credential)
-//        return AuthDataResultModel(user: authDataResult.user)
-//    }
     private func linkCredential(credential: AuthCredential) async throws -> AuthDataResultModel {
         guard let user = Auth.auth().currentUser else {
             throw URLError(.badURL)

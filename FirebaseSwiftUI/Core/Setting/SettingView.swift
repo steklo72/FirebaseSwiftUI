@@ -6,64 +6,7 @@
 //
 
 import SwiftUI
-@MainActor
-final class SettingViewModel: ObservableObject{
-    @Published var authProviders: [AuthProviderOption] = []
-    @Published var authUser: AuthDataResultModel? = nil
-    
-    func loadAuthProviders() {
-        if let provider =  try? AuthenticationManager.shared.getProviders() {
-            authProviders = provider
-        }
-    }
-    func loadAuthUser() {
-        self.authUser =  try? AuthenticationManager.shared.getAuthenticatedUser()
-    }
-    
-    func signOut() throws {
-        try AuthenticationManager.shared.signOut()
-        
-    }
-    func resetPassword() async throws {
-        let authUser = try AuthenticationManager.shared.getAuthenticatedUser()
-        
-        
-        guard let email = authUser.email else {
-            throw URLError(.fileDoesNotExist)
-        }
-       try await AuthenticationManager.shared.resetPassword(email: email)
-    }
-    func updateEmail() async throws {
-        let email = "hello123@gmail.com"
-//        let authUser = try AuthenticationManager.shared.getAuthenticatedUser()
-//        
-//        
-//        guard let email = authUser.email else {
-//            throw URLError(.fileDoesNotExist)
-//        }
-       try await AuthenticationManager.shared.updateEmail(email: email)
-    }
-    func updatePassword() async throws {
-        let password = "123123"
-        try await AuthenticationManager.shared.updatePassword(password: password)
-    }
-    func linkGoogleAccount() async throws {
-        let helper = SignInGoogleHelper()
-        let tokens = try await helper.signIn()
-        self.authUser = try await AuthenticationManager.shared.signInGoogle(tokens: tokens)
-        
-    }
-    func linkAppleAccount() async throws {
-        let helper = SignInAppleHelper()
-        let tokens = try await helper.startSignInWithAppleFlow()
-        self.authUser = try await AuthenticationManager.shared.signInApple(tokens: tokens)
-    }
-    func linkEmailAccount() async throws {
-        let email = "hello123@gmail.com"
-        let password = "123123"
-        self.authUser = try await AuthenticationManager.shared.linkEmail(email: email, password: password)
-    }
-}
+
 struct SettingView: View {
     @StateObject private var viewModel = SettingViewModel()
     @Binding var showSignInView: Bool
@@ -80,6 +23,19 @@ struct SettingView: View {
                 }
                 
             }
+            Button(role: .destructive) {
+                Task {
+                    do {
+                        try await viewModel.delete()
+                        showSignInView = true
+                    } catch {
+                        print(error)
+                    }
+                }
+            } label: {
+                Text("Удалить учетку")
+            }
+
             if viewModel.authProviders.contains(.email) {
                 emailSection
             }
