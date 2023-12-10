@@ -83,13 +83,30 @@ final class ProductsViewModel: ObservableObject {
         
     }
     func getProducts() {
-        print("Last DOC")
-        print(lastDocument)
+        
         Task {
            let (newProducts, lastDocument) = try await ProductsManager.shared.getAllProducts(priceDescending: selectedFilter?.priceDescending, forCategory: selectedCategory?.categoryKey, count: 10, lastDocument: lastDocument)
                     self.products.append(contentsOf: newProducts)
-                    self.lastDocument = lastDocument
+            if let lastDocument {
+                self.lastDocument = lastDocument
+            }
+           
         }
+        
+    }
+    
+    func getProductsCount() {
+        Task {
+            let count = try await ProductsManager.shared.getAllProductCount()
+            print("GETTED PRODUCT CAOUNT: \(count)")
+        }
+    }
+    func addUserFavoriteProduct(productId: Int) {
+        Task {
+            let authDataResult = try AuthenticationManager.shared.getAuthenticatedUser()
+            try? await UserManager.shared.addUserFavoriteProduct(userId: authDataResult.uid, productId: productId)
+        }
+        
         
     }
     //MARK: Дополнительная загрузок по последнему элементу
@@ -115,10 +132,16 @@ struct ProductsView: View {
         List {
             ForEach(viewModel.products) { product in
                ProductCellView(product: product)
+                    .contextMenu(menuItems: {
+                        Button("Добавить в избранное") {
+                            viewModel.addUserFavoriteProduct(productId: product.id)
+                        }
+                        
+                    })
                 if product == viewModel.products.last {
                     ProgressView()
                         .onAppear{
-                            print("refething")
+                           
                             viewModel.getProducts()
                         }
                 }
@@ -154,6 +177,7 @@ struct ProductsView: View {
         })
         .onAppear {
             viewModel.getProducts()
+//            viewModel.getProductsCount()
         }
     }
 }
