@@ -23,7 +23,7 @@ struct TabBarView: View {
                 FavoriteView()
             }.tabItem {
                 Image(systemName: "star.fill")
-                Text("Favorites")
+                Text("Избранное")
             }
             NavigationStack {
                 ProfileView(showSignInView: $showSignInView)
