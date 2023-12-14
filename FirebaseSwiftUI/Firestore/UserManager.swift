@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseFirestoreSwift
+import Combine
 
 struct Movie: Codable {
     let id: String
@@ -24,6 +25,9 @@ struct DBUser: Codable {
     let isPremium: Bool?
     let preferences: [String]?
     let favoriteMovie: Movie?
+    let profileImagePath: String?
+    let profileImagePathUrl: String?
+    
     
     
     init(auth: AuthDataResultModel) {
@@ -35,6 +39,8 @@ struct DBUser: Codable {
         self.isPremium = false
         self.preferences = nil
         self.favoriteMovie = nil
+        self.profileImagePath = nil
+        self.profileImagePathUrl = nil
     }
     
     init(userId: String,
@@ -44,7 +50,9 @@ struct DBUser: Codable {
     dataCreated: Date? = nil,
     isPremium: Bool? = nil,
     preferences: [String]? = nil,
-    favoriteMovie: Movie? = nil
+    favoriteMovie: Movie? = nil,
+    profileImagePath: String? = nil,
+    profileImagePathUrl: String? = nil
            ) {
         self.userId = userId
         self.isAnonymous = isAnonymous
@@ -54,6 +62,8 @@ struct DBUser: Codable {
         self.isPremium = isPremium
         self.preferences = preferences
         self.favoriteMovie = favoriteMovie
+        self.profileImagePath = profileImagePath
+        self.profileImagePathUrl = profileImagePathUrl
     }
 //    func tooglePremiumStatus() -> DBUser {
 //        let currentValue = isPremium ?? false
@@ -73,6 +83,8 @@ struct DBUser: Codable {
         case isPremium = "user_isPremium"
         case preferences = "preferences"
         case favoriteMovie = "favorite_movie"
+        case profileImagePath = "profile_image_path"
+        case profileImagePathUrl = "profile_image_path_url"
     }
     
     init(from decoder: Decoder) throws {
@@ -85,6 +97,8 @@ struct DBUser: Codable {
         self.isPremium = try container.decodeIfPresent(Bool.self, forKey: .isPremium)
         self.preferences = try container.decodeIfPresent([String].self, forKey: .preferences)
         self.favoriteMovie = try container.decodeIfPresent(Movie.self, forKey: .favoriteMovie)
+        self.profileImagePath = try container.decodeIfPresent(String.self, forKey: .profileImagePath)
+        self.profileImagePathUrl = try container.decodeIfPresent(String.self, forKey: .profileImagePathUrl)
     }
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -96,6 +110,8 @@ struct DBUser: Codable {
         try container.encodeIfPresent(self.isPremium, forKey: .isPremium)
         try container.encodeIfPresent(self.preferences, forKey: .preferences)
         try container.encodeIfPresent(self.favoriteMovie, forKey: .favoriteMovie)
+        try container.encodeIfPresent(self.profileImagePath, forKey: .profileImagePath)
+        try container.encodeIfPresent(self.profileImagePathUrl, forKey: .profileImagePathUrl)
     }
     
     
@@ -113,7 +129,7 @@ final class UserManager {
     }
     
     private func userFavoriteProductCollection(userId: String) -> CollectionReference {
-        userDocument(userId: userId).collection("favorute_products")
+        userDocument(userId: userId).collection("favorite_products")
     }
     private func userFavoriteProductDocument(userId: String, favoriteProductId: String) -> DocumentReference {
         userFavoriteProductCollection(userId: userId).document(favoriteProductId)
@@ -131,6 +147,7 @@ final class UserManager {
 //        decoder.keyDecodingStrategy = .convertFromSnakeCase
         return decoder
     }()
+    private var userFavoriteProductsListener: ListenerRegistration? = nil
 //    func createNewUser(user: DBUser) async throws {
 //    try userDocument(userId: user.userId).setData(from: user, merge: false, encoder: encoder)
 //}
@@ -185,6 +202,15 @@ final class UserManager {
     func updateUserPremiumStatus(userId: String, isPremium: Bool) async throws {
         let data: [String: Any] = [
             DBUser.CodingKeys.isPremium.rawValue : isPremium
+//            "custom_key" : "123"
+            ]
+        try await userDocument(userId: userId).updateData(data)
+    }
+    func updateUserProfileImagePath(userId: String, path: String?, url: String?) async throws {
+        let data: [String: Any] = [
+            DBUser.CodingKeys.profileImagePath.rawValue : path,
+            DBUser.CodingKeys.profileImagePathUrl.rawValue : url
+//            "custom_key" : "123"
             ]
         try await userDocument(userId: userId).updateData(data)
     }
@@ -237,18 +263,53 @@ final class UserManager {
     func getAllUserFavoriteProducts(userId: String) async throws -> [UserFavoriteProduct] {
         try await userFavoriteProductCollection(userId: userId).getDocuments(as: UserFavoriteProduct.self)
     }
+    
+    func removeListenerForAllUserFavoriteProducts() {
+        self.userFavoriteProductsListener?.remove()
+    }
+    
     func addListenerForAllUserFavoriteProducts(userId: String, completion: @escaping (_ products: [UserFavoriteProduct]) -> Void) {
-        userFavoriteProductCollection(userId: userId).addSnapshotListener { querySnapshot, error in
+        self.userFavoriteProductsListener = userFavoriteProductCollection(userId: userId).addSnapshotListener { querySnapshot, error in
             guard let documents = querySnapshot?.documents else {
                 print("No document")
                 return
             }
-//            let products: [UserFavoriteProduct] = documents.compactMap { documentSnapshot in
-//                return try? documentSnapshot.data(as: UserFavoriteProduct.self)
-//            }
             let products: [UserFavoriteProduct] = documents.compactMap({ try? $0.data(as: UserFavoriteProduct.self) })
             completion(products)
+            
+            querySnapshot?.documentChanges.forEach { diff in
+                if (diff.type == .added) {
+                  print("New products: \(diff.document.data())")
+                }
+                if (diff.type == .modified) {
+                  print("Modified products: \(diff.document.data())")
+                }
+                if (diff.type == .removed) {
+                  print("Removed products: \(diff.document.data())")
+                }
+              }
         }
+    }
+//    func addListenerForAllUserFavoriteProducts(userId: String) -> AnyPublisher<[UserFavoriteProduct], Error> {
+//        let publisher = PassthroughSubject<[UserFavoriteProduct], Error>()
+//        
+//        self.userFavoriteProductsListener = userFavoriteProductCollection(userId: userId).addSnapshotListener { querySnapshot, error in
+//            guard let documents = querySnapshot?.documents else {
+//                print("No document")
+//                return
+//            }
+//            let products: [UserFavoriteProduct] = documents.compactMap({ try? $0.data(as: UserFavoriteProduct.self) })
+//            publisher.send(products)
+//            
+//            
+//        }
+//        return publisher.eraseToAnyPublisher()
+//    }
+    func addListenerForAllUserFavoriteProducts(userId: String) -> AnyPublisher<[UserFavoriteProduct], Error> {
+        let (publisher, listener) = userFavoriteProductCollection(userId: userId)
+            .addSnapshotListener(as: UserFavoriteProduct.self)
+        self.userFavoriteProductsListener = listener
+        return publisher
     }
 }
 

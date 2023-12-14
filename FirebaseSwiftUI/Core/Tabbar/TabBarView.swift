@@ -13,10 +13,16 @@ struct TabBarView: View {
     var body: some View {
         TabView {
             NavigationStack {
+                Text("Главное")
+            }.tabItem {
+                Image(systemName: "house")
+                Text("Главная")
+            }
+            NavigationStack {
                 ProductsView()
                    
             }.tabItem {
-                Image(systemName: "cart")
+                Image(systemName: "list.bullet.rectangle")
                 Text("Товары")
             }
             NavigationStack {
@@ -24,6 +30,12 @@ struct TabBarView: View {
             }.tabItem {
                 Image(systemName: "star.fill")
                 Text("Избранное")
+            }
+            NavigationStack {
+                Text("Здесь будет корзина")
+            }.tabItem {
+                Image(systemName: "cart")
+                Text("Корзина")
             }
             NavigationStack {
                 ProfileView(showSignInView: $showSignInView)
