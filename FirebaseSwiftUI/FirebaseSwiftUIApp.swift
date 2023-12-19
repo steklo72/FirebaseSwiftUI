@@ -15,7 +15,8 @@ struct FirebaseSwiftUIApp: App {
    
     var body: some Scene {
         WindowGroup {
-            RootView()
+//            RootView()
+            PerfomanceView()
 
         }
     }
@@ -26,4 +27,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     FirebaseApp.configure()
     return true
   }
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        
+    }
+    func applicationWillResignActive(_ application: UIApplication) {
+        
+    }
 }

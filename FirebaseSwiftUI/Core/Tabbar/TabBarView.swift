@@ -13,7 +13,7 @@ struct TabBarView: View {
     var body: some View {
         TabView {
             NavigationStack {
-                Text("Главное")
+                CrashView()
             }.tabItem {
                 Image(systemName: "house")
                 Text("Главная")
