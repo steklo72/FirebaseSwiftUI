@@ -109,6 +109,14 @@ final class ProductsViewModel: ObservableObject {
         
         
     }
+    func addUserBasketProduct(productId: Int) {
+        Task {
+            let authDataResult = try AuthenticationManager.shared.getAuthenticatedUser()
+            try? await UserManager.shared.addUserBasketProduct(userId: authDataResult.uid, productId: productId)
+        }
+        
+        
+    }
     //MARK: Дополнительная загрузок по последнему элементу
     
 //    func getProductsByRating() {

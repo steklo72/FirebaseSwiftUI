@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Firebase
+import FirebaseCore
 
 @main
 struct FirebaseSwiftUIApp: App {
@@ -15,8 +16,9 @@ struct FirebaseSwiftUIApp: App {
    
     var body: some Scene {
         WindowGroup {
-//            RootView()
-            PerfomanceView()
+            RootView()
+//            PerfomanceView()
+//            AnalyticsView()
 
         }
     }

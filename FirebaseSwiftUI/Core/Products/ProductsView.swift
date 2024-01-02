@@ -23,6 +23,9 @@ struct ProductsView: View {
                         Button("Добавить в избранное") {
                             viewModel.addUserFavoriteProduct(productId: product.id)
                         }
+                        Button("Добавить в корзину") {
+                            viewModel.addUserBasketProduct(productId: product.id)
+                        }
                         
                     })
                 if product == viewModel.products.last {

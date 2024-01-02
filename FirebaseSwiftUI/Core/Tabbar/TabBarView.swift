@@ -32,7 +32,7 @@ struct TabBarView: View {
                 Text("Избранное")
             }
             NavigationStack {
-                Text("Здесь будет корзина")
+                BasketView()
             }.tabItem {
                 Image(systemName: "cart")
                 Text("Корзина")

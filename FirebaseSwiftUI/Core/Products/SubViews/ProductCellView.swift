@@ -16,7 +16,7 @@ struct ProductCellView: View {
                 image
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 75, height: 75)
+                    .frame(width: 100, height: 100)
                     .cornerRadius(10)
             } placeholder: {
                 ProgressView()
@@ -32,6 +32,7 @@ struct ProductCellView: View {
                 Text(String(product.rating ?? 0) + " Рейтинг")
                 Text("Категория " + (product.category ?? "n/a"))
                 Text("Бренд " + (product.brand ?? "n/a"))
+               
                 
             }
             .font(.callout)
@@ -41,5 +42,5 @@ struct ProductCellView: View {
 }
 
 #Preview {
-    ProductCellView(product: Product(id: 1, title: "Test1", description: "test", price: 33, discountPercentage: 1.3, rating: 3.4, stock: 44, brand: "Test", category: "Test", thumbnail: "", images: nil))
+    ProductCellView(product: Product(id: 1, title: "Эскимо простоквашено", description: "test", price: 33, discountPercentage: 1.3, rating: 3.4, stock: 44, brand: "Test", category: "Test", thumbnail: "brand", images: nil))
 }

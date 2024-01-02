@@ -134,6 +134,92 @@ final class UserManager {
     private func userFavoriteProductDocument(userId: String, favoriteProductId: String) -> DocumentReference {
         userFavoriteProductCollection(userId: userId).document(favoriteProductId)
     }
+    //MARK: BASKET
+    private var userBasketProductsListener: ListenerRegistration? = nil
+    
+    private func userBasketProductCollection(userId: String) -> CollectionReference {
+        userDocument(userId: userId).collection("basket_products")
+    }
+    private func userBasketProductDocument(userId: String, basketProductId: String) -> DocumentReference {
+        userBasketProductCollection(userId: userId).document(basketProductId)
+    }
+    func addUserBasketProduct(userId: String, productId: Int) async throws {
+        let document = userBasketProductCollection(userId: userId).document()
+//        let document = userDocument(userId: userId).collection("favorite_products").document()
+        let documentId  = document.documentID
+        let data: [String:Any] = [
+            UserFavoriteProduct.CodingKeys.id.rawValue : documentId,
+            UserFavoriteProduct.CodingKeys.productId.rawValue : productId,
+            UserFavoriteProduct.CodingKeys.dateCreated.rawValue : Timestamp()
+            
+        
+        ]
+        
+        try await document.setData(data, merge: false)
+    }
+    func removeUserBasketProduct(userId: String, basketProductId: String) async throws {
+        try await userBasketProductDocument(userId: userId, basketProductId: basketProductId).delete()
+//        try await userDocument(userId: userId).collection("favorite_products").document(favoriteProductId).delete()
+    
+    }
+    func getAllUserBasketProducts(userId: String) async throws -> [UserBasketProduct] {
+        try await userBasketProductCollection(userId: userId).getDocuments(as: UserBasketProduct.self)
+    }
+    
+    func removeListenerForAllUserBasketProducts() {
+        self.userBasketProductsListener?.remove()
+    }
+    
+    func addListenerForAllUserBasketProducts(userId: String, completion: @escaping (_ products: [UserBasketProduct]) -> Void) {
+        self.userBasketProductsListener = userBasketProductCollection(userId: userId).addSnapshotListener { querySnapshot, error in
+            guard let documents = querySnapshot?.documents else {
+                print("No document")
+                return
+            }
+            let products: [UserBasketProduct] = documents.compactMap({ try? $0.data(as: UserBasketProduct.self) })
+            completion(products)
+            
+            querySnapshot?.documentChanges.forEach { diff in
+                if (diff.type == .added) {
+                  print("New products: \(diff.document.data())")
+                }
+                if (diff.type == .modified) {
+                  print("Modified products: \(diff.document.data())")
+                }
+                if (diff.type == .removed) {
+                  print("Removed products: \(diff.document.data())")
+                }
+              }
+        }
+        
+        
+    }
+    func addListenerForAllUserBasketProducts(userId: String) -> AnyPublisher<[UserBasketProduct], Error> {
+        let (publisher, listener) = userBasketProductCollection(userId: userId)
+            .addSnapshotListener(as: UserBasketProduct.self)
+        self.userBasketProductsListener = listener
+        return publisher
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     //MARK: ВТОРОЙ ВАРИАНТ ИСПОЛЬЗОВАНИЯ
@@ -337,5 +423,29 @@ struct UserFavoriteProduct: Codable {
     }
    
     
+    
+}
+struct UserBasketProduct: Codable {
+    let id: String
+    let productId: Int
+    let dateCreated: Date
+    enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case productId = "product_id"
+        case dateCreated = "date_created"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.productId = try container.decode(Int.self, forKey: .productId)
+        self.dateCreated = try container.decode(Date.self, forKey: .dateCreated)
+    }
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.id, forKey: .id)
+        try container.encode(self.productId, forKey: .productId)
+        try container.encode(self.dateCreated, forKey: .dateCreated)
+    }
     
 }
